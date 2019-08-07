@@ -9,7 +9,7 @@ from conans.util.log import logger
 
 def build(graph_manager, hook_manager, conanfile_path,
           source_folder, build_folder, package_folder, install_folder,
-          test=False, should_configure=True, should_build=True, should_install=True,
+          test=False, python_requires=None, should_configure=True, should_build=True, should_install=True,
           should_test=True):
     """ Call to build() method saved on the conanfile.py
     param conanfile_path: path to a conanfile.py
@@ -32,6 +32,9 @@ def build(graph_manager, hook_manager, conanfile_path,
             conan_file.requires.add_ref(test)
         except ConanException:
             pass
+
+    if python_requires:
+        conan_file.python_requires.update(python_requires)
 
     conan_file.should_configure = should_configure
     conan_file.should_build = should_build

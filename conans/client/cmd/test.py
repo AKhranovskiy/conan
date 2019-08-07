@@ -1,6 +1,7 @@
 import hashlib
 import os
 import tempfile
+import sys
 
 from conans.client.cmd.build import build
 from conans.util.env_reader import get_env
@@ -40,10 +41,12 @@ class PackageTester(object):
                                   manifest_verify=manifest_verify,
                                   manifest_interactive=manifest_interactive,
                                   keep_build=keep_build)
+
             # FIXME: This is ugly access to graph_manager and hook_manager. Will be cleaned in 2.0
             build(self._manager._graph_manager, self._manager._hook_manager, conanfile_abs_path,
                   base_folder, test_build_folder, package_folder=None,
-                  install_folder=test_build_folder, test=reference)
+                  install_folder=test_build_folder, test=reference,
+                  python_requires=python_requires(reference))
         finally:
             if delete_after_build:
                 # Required for windows where deleting the cwd is not possible.
@@ -63,3 +66,14 @@ class PackageTester(object):
         sha = hashlib.sha1("".join(profile.dumps()).encode()).hexdigest()
         build_folder = os.path.join(base_folder, "build", sha)
         return (build_folder, False)
+
+
+def python_requires(ref):
+    """ Loads given reference as python module """
+    module = None
+    py_reqs = sys.modules["conans"].python_requires
+    with py_reqs.capture_requires():
+        py_reqs.valid = True
+        module = {"self": py_reqs(str(ref))}
+        py_reqs.valid = False
+    return module
